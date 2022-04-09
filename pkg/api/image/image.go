@@ -9,7 +9,7 @@ import (
 	"image/jpeg"
 )
 
-// NewService : Creates a image service
+// NewService : Creates an image service
 func NewService() Service {
 	return Service{}
 }
@@ -28,10 +28,13 @@ func handlePost(context *gin.Context) {
 		context.Error(custom_error.BadRequestError("Request did not contain any file"))
 		return
 	}
-	srcImage, header, _ := image.Decode(file)
+	srcImage, _, error := image.Decode(file)
 	finalImage := manipulations.Crop(srcImage)
 
-	print(header)
+	if error != nil {
+		context.Error(custom_error.BadRequestError("We do not support this image format"))
+		return
+	}
 
 	buf := new(bytes.Buffer)
 	jpeg.Encode(buf, finalImage, nil)

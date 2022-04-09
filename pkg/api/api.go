@@ -11,7 +11,10 @@ func New() Api {
 		router: gin.Default(),
 	}
 
+	// Mount error handler for centralized/ consistent error handling
 	api.Use(custom_error.NewHandler())
+
+	// Mount image service on path '<Root>/image'
 	api.Mount(image.NewService(), "/image")
 
 	return api

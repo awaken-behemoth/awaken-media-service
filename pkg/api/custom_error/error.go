@@ -1,69 +1,66 @@
 package custom_error
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
 )
 
+// ApiErrorResponse : Wrapper over ApiError. ( This struct is what will be sent to the client )
 type ApiErrorResponse struct {
-	error ApiError `json:"error"`
+	Error ApiError `json:"error"`
 }
 
+// ApiError : Api error schema
+type ApiError struct {
+	Code      int    `json:"code"`
+	Status    string `json:"status"`
+	Message   string `json:"message"`
+	Timestamp string `json:"timestamp"`
+}
+
+// NewApiError : Returns an instance of ApiError
 func NewApiError(code int, message string) ApiError {
 	return ApiError{
-		code:      code,
-		message:   message,
-		status:    http.StatusText(code),
-		timestamp: time.Now().Format(time.RFC850),
+		Code:      code,
+		Message:   message,
+		Status:    http.StatusText(code),
+		Timestamp: time.Now().Format(time.RFC850),
 	}
 }
 
-type ApiError struct {
-	code      int    `json:"code"`
-	status    string `json:"status"`
-	message   string `json:"message"`
-	timestamp string `json:"timestamp"`
-}
-
 func (apiError ApiError) Error() string {
-	return apiError.message
+	return apiError.Message
 }
 
+// NewHandler : returns an instance of the global error handler
 func NewHandler() gin.HandlerFunc {
-
 	return handleError
 }
 
+// handleError : Global error handler
 func handleError(context *gin.Context) {
 
 	context.Next()
 
 	detectedErrors := context.Errors.ByType(gin.ErrorTypeAny)
 
-	if len(detectedErrors) > 0 {
-		err := detectedErrors[0].Err
-		var parsedError *ApiError
+	for _, _err := range detectedErrors {
+		err := _err.Err
+		var parsedError ApiError
 
 		switch err.(type) {
 
-		case *ApiError:
-			print("I matched the api error")
-			parsedError = err.(*ApiError)
+		case ApiError:
+			parsedError = err.(ApiError)
 			break
 
 		default:
-			print("I matched the dfault")
-			temp := NewApiError(http.StatusInternalServerError, err.Error())
-			parsedError = &temp
+			parsedError = NewApiError(http.StatusInternalServerError, err.Error())
+
 		}
 
-		fmt.Printf("t1: %T\n", err)
-
-		//print(parsedError.code)
-		context.JSON(parsedError.code, parsedError.Error())
-		//context.AbortWithStatusJSON(parsedError.code, gin.H{"error": parsedError.Error()})
+		context.JSON(parsedError.Code, ApiErrorResponse{Error: parsedError})
 		return
 	}
 
