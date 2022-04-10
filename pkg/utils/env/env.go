@@ -11,7 +11,7 @@ func GetEnv(key string) string {
 	return os.Getenv(key)
 }
 
-// LoadEnv : load env present in the root directory
+// LoadEnv : load env from .env present in the root directory
 func LoadEnv() {
 	err := godotenv.Load(".env")
 	if err != nil {
